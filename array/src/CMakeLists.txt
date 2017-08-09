@@ -5,14 +5,10 @@ set(LIB_HEADERS
 )
 
 set(LIB_SOURCES
-  World.cxx
+  Collection.c
 )
 
 set(APP_HEADERS
-)
-
-set(APP_SOURCES
-  main.cxx
 )
 
 # Define two variables in order not to repeat ourselves.
@@ -30,8 +26,6 @@ set_target_properties(${LIBRARY_NAME} PROPERTIES
 )
 
 # This is a make target, so you can do a "make projArunner"
-set(APPLICATION_NAME projArunner)
-add_executable(${APPLICATION_NAME} ${APP_SOURCES})
 
 # Links the target exe (projArunner) against the library (libprojA) and other required libraries
 target_link_libraries(${APPLICATION_NAME} ${LIBRARY_NAME} ${Boost_PROGRAM_OPTIONS_LIBRARY})
