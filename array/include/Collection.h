@@ -124,9 +124,9 @@ void Arrayed_Collection_Finalize (struct ArrayedCollection* self);
 
 #define TYPED_ARRAYED_COLLECTION_SIGNATURES(Name) \
 void Initialize_## Name ##_Object ( Name * Instance); \
- Name * ## Name ##_New (void);
+ Name * Name ##_New (void);
   
-#define TYPED_ARRAYED_COLLECTION_NEW(Name) struct Name * ## Name ##_New (){\
+#define TYPED_ARRAYED_COLLECTION_NEW(Name) struct Name * Name ##_New (){\
   struct Name * ret = malloc (sizeof(struct Name));\
   Initialize_## Name ##_Object(ret);\
     return ret;}\

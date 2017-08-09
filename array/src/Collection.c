@@ -1,7 +1,7 @@
 #include "Collection.h" 
 
-TYPED_ARRAYED_COLLECTION_INITIALIZE(ArrayedCollection, void);
-TYPED_ARRAYED_COLLECTION_NEW(ArrayedCollection);
+TYPED_ARRAYED_COLLECTION_DEFINITION_C(ArrayedCollection, void);
+
 
 
 void __AUX_Collection_AddInto (struct Collection* self, void* item, void* into) {
