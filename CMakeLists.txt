@@ -12,8 +12,8 @@ enable_testing() # needed on top-level CMakeLists.txt
 # conflicts. We also want to be able to issue "make doc" from the top dir while being able to issue "make doc"
 # in the subdirs *when* we compile only a subproject.
 # We define as well a function AddDocTarget in cmake/DoxygenTarget.cmake
-#add_custom_target(doc) # DEPENDS docProjA docProjB) Note: with CMake 3.X the DEPENDS would work
-#ADD_DEPENDENCIES(doc docProjA docProjB)
+add_custom_target(doc) # DEPENDS docProjA docProjB) Note: with CMake 3.X the DEPENDS would work
+ADD_DEPENDENCIES(doc docarray )
 
 add_subdirectory(array)
 
