@@ -2,6 +2,7 @@
 
 TYPED_ARRAYED_COLLECTION_DEFINITION_C(ArrayedCollection, void*);
 
+
 void * (*CALLOC)(size_t count, size_t size) = calloc;
 void * (*MALLOC)(size_t count) = malloc;
 void * (*REALLOC)(void* ptr, size_t size) = realloc;
@@ -19,7 +20,6 @@ void setReallocFunction(void * (*fn)(void* ptr, size_t size)) {
 }
 void setFreeFunction(void (*fn)(void*ptr)) {
 	FREE = fn;
-
 }
 
 void* (* getCallocFunction(void))(size_t count, size_t size) {
@@ -27,15 +27,13 @@ void* (* getCallocFunction(void))(size_t count, size_t size) {
 }
 void* (* getMallocFunction(void))(size_t size) {
 	return MALLOC;
-
 }
-void* (* getReallocFunction(void))(void* ptr, size_t size){
+void*(* getReallocFunction(void))(void* ptr, size_t size) {
 	return REALLOC;
 }
 void (* getFreeFunction(void))(void* ptr) {
 	return FREE;
 }
-
 
 void __AUX_Collection_AddInto(struct Collection* self, void* item, void* into) {
 	Arrayed_Collection_Add((struct ArrayedCollection*) into, item);
@@ -44,11 +42,22 @@ void __AUX_Collection_AddInto(struct Collection* self, void* item, void* into) {
 int Arrayed_Collection_Add(struct ArrayedCollection* self, void* item) {
 	if (self->used >= self->size) {
 		self->size += 2;
-		self->data = REALLOC(self->data, self->size * sizeof(void*));
+		self->data = getReallocFunction()(self->data, self->size * self->typeSize);
 	}
-	self->data[self->used] = item;
+	self->__Write(self, self->used, item);
 	self->used++;
 	return self->used - 1;
+}
+
+void* Arrayed_Collection_Dequeue(struct ArrayedCollection* self) {
+	void* item = self->data[0];
+	int i;
+	for (i = 0; i < self->used; i++) {
+		self->__Write(self, i, (self->__Read(self, i + 1)));
+	}
+	self->used--;
+
+	return item;
 }
 
 boolean Arrayed_Collection_Remove(struct ArrayedCollection* self, void* item) {
@@ -56,25 +65,22 @@ boolean Arrayed_Collection_Remove(struct ArrayedCollection* self, void* item) {
 }
 
 int Arrayed_Collection_AddAll(struct ArrayedCollection* self, struct Collection* otherCollection) {
-	otherCollection->forEach(otherCollection, (void (*)(struct Collection*, void*, void*)) __AUX_Collection_AddInto, self);
+	otherCollection->forEach(otherCollection, (void (*)(void*, void*)) __AUX_Collection_AddInto, self);
 	return otherCollection->count(otherCollection);
 }
 
-boolean Arrayed_Collection_AllSatisfy(struct ArrayedCollection* self, boolean (*Condition)(struct ArrayedCollection* self, void* item, void* aParameter),
-		void* aParameter) {
+boolean Arrayed_Collection_AllSatisfy(struct ArrayedCollection* self, boolean (*Condition)(void* item, void* aParameter), void* aParameter) {
 	int i;
 	for (i = 0; i < self->used; i++) {
-		if (!Condition(self, self->data[i], aParameter))
-			return FALSE;
+		if (!Condition(self->__Read(self, i), aParameter)) return FALSE;
 	}
 	return TRUE;
 }
 
-boolean Arrayed_Collection_AnySatisfy(struct ArrayedCollection* self, boolean (*Condition)(void*self, void* item, void* aParameter), void* aParameter) {
+boolean Arrayed_Collection_AnySatisfy(struct ArrayedCollection* self, boolean (*Condition)(void* item, void* aParameter), void* aParameter) {
 	int i;
 	for (i = 0; i < self->used; i++) {
-		if (Condition(self, self->data[i], aParameter))
-			return TRUE;
+		if (Condition(self->__Read(self, i), aParameter)) return TRUE;
 	}
 	return FALSE;
 }
@@ -84,7 +90,7 @@ struct Collection* Arrayed_Collection_Collect(struct ArrayedCollection* self, vo
 	ArrayedCollection * col = ArrayedCollection_New();
 
 	for (i = 0; i < self->used; i++) {
-		col->add(col, Map(self->data[i]));
+		col->add(col, Map(self->__Read(self, i)));
 	}
 	return (struct Collection*) col;
 }
@@ -93,36 +99,33 @@ struct ArrayedCollection* Arrayed_Collection_Select(struct ArrayedCollection* se
 	ArrayedCollection * col = ArrayedCollection_New();
 
 	for (i = 0; i < self->used; i++) {
-		if (Condition(self->data[i], aParameter)) {
-			col->add(col, self->data[i]);
+		if (Condition(self->__Read(self, i), aParameter)) {
+			col->add(col, self->__Read(self, i));
 		}
 	}
 	return col;
 }
-void* Arrayed_Collection_Detect(struct ArrayedCollection* self, boolean (*Comparator)(struct ArrayedCollection* self, void* item, void*aParameter),
-		void* aParameter) {
+void* Arrayed_Collection_Detect(struct ArrayedCollection* self, boolean (*Comparator)(void* item, void*aParameter), void* aParameter) {
 	int i;
 	for (i = 0; i < self->used; i++) {
-		if (Comparator(self, self->data[i], aParameter))
-			return self->data[i];
+		if (Comparator(self->__Read(self, i), aParameter)) return self->__Read(self, i);
 	}
 	return NULL;
 }
-void* Arrayed_Collection_Inject(struct ArrayedCollection* self, void* (*Into)(struct ArrayedCollection*, void*, void*), void* parameter) {
+void* Arrayed_Collection_Inject(struct ArrayedCollection* self, void* (*Into)(void*, void*), void* parameter) {
 	void * result = parameter;
 	int i;
 	for (i = 0; i < self->used; i++) {
-		result = Into(self, self->data[i], result);
+		result = Into(self->__Read(self, i), result);
 	}
 	return result;
 
 }
 
-void Arrayed_Collection_ForEach(struct ArrayedCollection* self, void (*function)(struct ArrayedCollection* self, void* item, void* aParameter),
-		void* aParameter) {
+void Arrayed_Collection_ForEach(struct ArrayedCollection* self, void (*function)(void* item, void* aParameter), void* aParameter) {
 	int i;
 	for (i = 0; i < self->used; i++) {
-		function(self, self->data[i], aParameter);
+		function(self->__Read(self, i), aParameter);
 	}
 }
 
@@ -130,13 +133,13 @@ int Arrayed_Collection_Count(struct ArrayedCollection* self) {
 	return self->used;
 }
 void* Arrayed_Collection_First(struct ArrayedCollection* self) {
-	return self->data[0];
+	return self->__Read(self, 0);
 }
 void* Arrayed_Collection_Last(struct ArrayedCollection* self) {
-	return self->data[self->used - 1];
+	return self->__Read(self, self->used - 1);
 }
 void* Arrayed_Collection_AnyOne(struct ArrayedCollection* self) {
-	return self->data[0];
+	return self->__Read(self, 0);
 }
 void Arrayed_Collection_Finalize(struct ArrayedCollection* self) {
 	FREE(self->data);

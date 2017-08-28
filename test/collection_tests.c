@@ -31,9 +31,16 @@ void custom_free(void* ptr) {
 TYPED_ARRAYED_COLLECTION_DEFINITION_H(Generated, char*);
 TYPED_ARRAYED_COLLECTION_DEFINITION_C(Generated, char*);
 
+typedef enum {
+	VALUE, VALUE2
+
+} ArbitraryTestingEnum;
+TYPED_ARRAYED_COLLECTION_DEFINITION_H(GeneratedEnumCollection, ArbitraryTestingEnum);
+TYPED_ARRAYED_COLLECTION_DEFINITION_C(GeneratedEnumCollection, ArbitraryTestingEnum);
+
 START_TEST(ArrayedCollectionMemoryLayoutAsExpected)
 	{
-		ck_assert_int_eq(sizeof(ArrayedCollection), (sizeof(void*) * 16) + (sizeof(int) * 2));
+		ck_assert_int_eq(sizeof(ArrayedCollection), (sizeof(void*) * 16) + (sizeof(void**)) + (sizeof(int) * 3));
 	}END_TEST
 
 START_TEST(ArrayedCollectionCastsKeepsFunctionsPointersExpected)
@@ -46,6 +53,7 @@ START_TEST(ArrayedCollectionCastsKeepsFunctionsPointersExpected)
 
 		ck_assert_ptr_eq(c->add, t->add);
 		ck_assert_ptr_eq(c->remove, t->remove);
+		ck_assert_ptr_eq(c->dequeue, t->dequeue);
 		ck_assert_ptr_eq(c->addAll, t->addAll);
 		ck_assert_ptr_eq(c->allSatisfy, t->allSatisfy);
 		ck_assert_ptr_eq(c->anySatisfy, t->anySatisfy);
@@ -67,6 +75,7 @@ START_TEST(ArrayedCollectionUsesArrayedCollectionFunctions)
 		ArrayedCollection c;
 		Initialize_ArrayedCollection_Object(&c);
 		ck_assert_ptr_eq(c.add, Arrayed_Collection_Add);
+		ck_assert_ptr_eq(c.dequeue, Arrayed_Collection_Dequeue);
 		ck_assert_ptr_eq(c.remove, Arrayed_Collection_Remove);
 		ck_assert_ptr_eq(c.addAll, Arrayed_Collection_AddAll);
 		ck_assert_ptr_eq(c.allSatisfy, Arrayed_Collection_AllSatisfy);
@@ -87,6 +96,7 @@ START_TEST(ArrayedCollectionUsesSpecificFinalizeForNew)
 	{
 		ArrayedCollection * c = ArrayedCollection_New();
 		ck_assert_ptr_eq(c->add, Arrayed_Collection_Add);
+		ck_assert_ptr_eq(c->dequeue, Arrayed_Collection_Dequeue);
 		ck_assert_ptr_eq(c->remove, Arrayed_Collection_Remove);
 		ck_assert_ptr_eq(c->addAll, Arrayed_Collection_AddAll);
 		ck_assert_ptr_eq(c->allSatisfy, Arrayed_Collection_AllSatisfy);
@@ -108,6 +118,7 @@ START_TEST(GeneratedCollectionUsesSpecificFinalizeForNew)
 	{
 		Generated * c = Generated_New();
 		ck_assert_ptr_eq(c->add, Arrayed_Collection_Add);
+		ck_assert_ptr_eq(c->dequeue, Arrayed_Collection_Dequeue);
 		ck_assert_ptr_eq(c->remove, Arrayed_Collection_Remove);
 		ck_assert_ptr_eq(c->addAll, Arrayed_Collection_AddAll);
 		ck_assert_ptr_eq(c->allSatisfy, Arrayed_Collection_AllSatisfy);
@@ -131,6 +142,7 @@ START_TEST(GeneratedCollectionCastsKeepsFunctionsPointersExpected)
 		Collection* c;
 		c = (Collection*) t;
 		ck_assert_ptr_eq(c->add, t->add);
+		ck_assert_ptr_eq(c->dequeue, t->dequeue);
 		ck_assert_ptr_eq(c->remove, t->remove);
 		ck_assert_ptr_eq(c->addAll, t->addAll);
 		ck_assert_ptr_eq(c->allSatisfy, t->allSatisfy);
@@ -243,16 +255,23 @@ START_TEST(ArrayedCollectionCallsMacroRealloc)
 	}END_TEST
 
 int i;
-void ForEachTest(ArrayedCollection* self, void* item, void* aParameter) {
+void ForEachTest(void* item, void* aParameter) {
 	ck_assert(*(int* )item == 1 || *(int* )item == 2);
 	i++;
 }
 
 boolean ConditionEquals(void* item, void* aParameter) {
 
-	return (*((int*) item) == *((int*)aParameter)) ? TRUE : FALSE;
+	return (*((int*) item) == *((int*) aParameter)) ? TRUE : FALSE;
 
 }
+
+boolean AllwaysTrueCondition(void* item, void* aParameter) {
+
+	return TRUE;
+
+}
+
 ArrayedCollection createTestedCollection() {
 	ArrayedCollection c;
 
@@ -278,7 +297,7 @@ START_TEST(ArrayedCollectionForEachWorksAsExpected)
 		c.finalize(&c);
 	}END_TEST
 
-void* IntoTest(struct ArrayedCollection* self, void*item, void*Rslt) {
+void* IntoTest( void*item, void*Rslt) {
 
 	int * param = (int*) Rslt;
 	int * each = (int*) item;
@@ -319,30 +338,105 @@ START_TEST(ArrayedCollectionSelectWorksAsExpected)
 
 	}END_TEST
 
-START_TEST(ArrayedCollectionRemoveWorksAsExpected)
+START_TEST(ArrayedCollectionDequeueWorksAsExpected)
 	{
-		ck_assert(1);
+		ArrayedCollection c = createTestedCollection();
+		ck_assert_int_eq(c.count(&c), 4);
+		int * data = c.dequeue(&c);
+		ck_assert_int_eq(c.count(&c), 3);
+		ck_assert_int_eq(*data, 1);
+		data = c.dequeue(&c);
+		ck_assert_int_eq(c.count(&c), 2);
+		ck_assert_int_eq(*data, 2);
+
 	}END_TEST
 
 START_TEST(ArrayedCollectionAllSatisfyTrueWorksAsExpected)
 	{
-		ck_assert(1);
+		ArrayedCollection c = createTestedCollection();
+		ck_assert(c.allSatisfy(&c, AllwaysTrueCondition, NULL));
 	}END_TEST
 
 START_TEST(ArrayedCollectionAllSatisfyFalseWorksAsExpected)
 	{
-		ck_assert(1);
+		ArrayedCollection c = createTestedCollection();
+		int data = 1;
+		ck_assert(!c.allSatisfy(&c, ConditionEquals, &data));
 	}END_TEST
 START_TEST(ArrayedCollectionAnySatisfyTrueWorksAsExpected)
 	{
-		ck_assert(1);
+		ArrayedCollection c = createTestedCollection();
+		int data = 1;
+		ck_assert(c.anySatisfy(&c, ConditionEquals, &data));
 	}END_TEST
 
 START_TEST(ArrayedCollectionAnySatisfyFalseWorksAsExpected)
 	{
-		ck_assert(1);
+		ArrayedCollection c = createTestedCollection();
+		int data = -1;
+		ck_assert(!c.anySatisfy(&c, ConditionEquals, &data));
 	}END_TEST
 
+START_TEST(GeneratedEnumCallsMacroRealloc)
+	{
+		GeneratedEnumCollection c;
+
+		ck_assert(realloc_called == 0);
+
+		Initialize_GeneratedEnumCollection_Object(&c);
+
+		c.add(&c, VALUE);
+		ck_assert(realloc_called == 0);
+		c.add(&c, VALUE2);
+		ck_assert(realloc_called == 0);
+		c.add(&c, VALUE);
+		ck_assert(realloc_called == 0);
+		c.add(&c, VALUE);
+		ck_assert(realloc_called == 0);
+		c.add(&c, VALUE2);
+		ck_assert(realloc_called == 0);
+		c.add(&c, VALUE2);
+		ck_assert(realloc_called == 1);
+		c.add(&c, VALUE2);
+		ck_assert(realloc_called == 1);
+		c.add(&c, VALUE);
+		ck_assert(realloc_called == 2);
+
+		c.finalize(&c);
+		ck_assert(realloc_called == 2);
+
+	}END_TEST
+START_TEST(GeneratedEnumCallsAddDequeue)
+	{
+		GeneratedEnumCollection c;
+
+		ck_assert(realloc_called == 0);
+
+		Initialize_GeneratedEnumCollection_Object(&c);
+
+		c.add(&c, VALUE);
+		c.add(&c, VALUE2);
+		c.add(&c, VALUE);
+		c.add(&c, VALUE);
+		c.add(&c, VALUE2);
+		c.add(&c, VALUE2);
+		c.add(&c, VALUE2);
+		c.add(&c, VALUE);
+
+		ck_assert_int_eq(c.dequeue(&c), VALUE);
+		ck_assert_int_eq(c.dequeue(&c), VALUE2);
+		ck_assert_int_eq(c.dequeue(&c), VALUE);
+		ck_assert_int_eq(c.dequeue(&c), VALUE);
+		ck_assert_int_eq(c.dequeue(&c), VALUE2);
+		ck_assert_int_eq(c.dequeue(&c), VALUE2);
+		ck_assert_int_eq(c.dequeue(&c), VALUE2);
+		ck_assert_int_eq(c.dequeue(&c), VALUE);
+
+		c.finalize(&c);
+
+	}END_TEST
+
+/** SETUP */
 static void SetUp() {
 	malloc_called = 0;
 	calloc_called = 0;
@@ -384,11 +478,17 @@ Suite * CreateSuite(void) {
 	tcase_add_test(tc_behaviour, ArrayedCollectionForEachWorksAsExpected);
 	tcase_add_test(tc_behaviour, ArrayedCollectionInjectIntoWorksAsExpected);
 	tcase_add_test(tc_behaviour, ArrayedCollectionSelectWorksAsExpected);
-	tcase_add_test(tc_behaviour, ArrayedCollectionRemoveWorksAsExpected);
+	tcase_add_test(tc_behaviour, ArrayedCollectionDequeueWorksAsExpected);
 	tcase_add_test(tc_behaviour, ArrayedCollectionAllSatisfyTrueWorksAsExpected);
 	tcase_add_test(tc_behaviour, ArrayedCollectionAllSatisfyFalseWorksAsExpected);
 	tcase_add_test(tc_behaviour, ArrayedCollectionAnySatisfyTrueWorksAsExpected);
 	tcase_add_test(tc_behaviour, ArrayedCollectionAnySatisfyFalseWorksAsExpected);
+
+	tcase_add_test(tc_behaviour, GeneratedEnumCallsMacroRealloc);
+	tcase_add_test(tc_behaviour, GeneratedEnumCallsAddDequeue);
+
+
+
 
 	tcase_add_unchecked_fixture(tc_structure, SetUp, TearDown);
 	tcase_add_unchecked_fixture(tc_behaviour, SetUp, TearDown);
