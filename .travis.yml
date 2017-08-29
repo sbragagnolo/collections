@@ -5,6 +5,6 @@ addons:
   apt:
     packages:
     - check
-before_install: mkdir build
-install: make all
+before_script: mkdir build
+script: make all
 
