@@ -40,7 +40,14 @@ TYPED_ARRAYED_COLLECTION_DEFINITION_C(GeneratedEnumCollection, ArbitraryTestingE
 
 START_TEST(ArrayedCollectionMemoryLayoutAsExpected)
 	{
-		ck_assert_int_eq(sizeof(ArrayedCollection), (sizeof(void*) * 18) + (sizeof(void**)) + (sizeof(int) * 3));
+		//
+		int fields, functions, data;
+		fields = sizeof(int) * 4;
+		data = sizeof(void*);
+		functions = sizeof(void*) * 18;
+		ck_assert_int_eq(sizeof(ArrayedCollection), fields + data + functions);
+		ck_assert_int_eq(sizeof(ArrayedCollection), sizeof(GeneratedEnumCollection));
+
 	}END_TEST
 
 START_TEST(ArrayedCollectionCastsKeepsFunctionsPointersExpected)
