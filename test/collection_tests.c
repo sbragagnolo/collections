@@ -40,7 +40,7 @@ TYPED_ARRAYED_COLLECTION_DEFINITION_C(GeneratedEnumCollection, ArbitraryTestingE
 
 START_TEST(ArrayedCollectionMemoryLayoutAsExpected)
 	{
-		ck_assert_int_eq(sizeof(ArrayedCollection), (sizeof(void*) * 16) + (sizeof(void**)) + (sizeof(int) * 3));
+		ck_assert_int_eq(sizeof(ArrayedCollection), (sizeof(void*) * 18) + (sizeof(void**)) + (sizeof(int) * 3));
 	}END_TEST
 
 START_TEST(ArrayedCollectionCastsKeepsFunctionsPointersExpected)
@@ -111,6 +111,9 @@ START_TEST(ArrayedCollectionUsesSpecificFinalizeForNew)
 		ck_assert_ptr_eq(c->last, Arrayed_Collection_Last);
 		ck_assert_ptr_eq(c->anyOne, Arrayed_Collection_AnyOne);
 		ck_assert_ptr_eq(c->finalize, Arrayed_Collection_Finalize_Object);
+		ck_assert_ptr_eq(c->__Write, __Write_ArrayedCollection);
+		ck_assert_ptr_eq(c->__Read, __Read_ArrayedCollection);
+
 		c->finalize(c);
 	}END_TEST
 
@@ -133,6 +136,8 @@ START_TEST(GeneratedCollectionUsesSpecificFinalizeForNew)
 		ck_assert_ptr_eq(c->last, Arrayed_Collection_Last);
 		ck_assert_ptr_eq(c->anyOne, Arrayed_Collection_AnyOne);
 		ck_assert_ptr_eq(c->finalize, Arrayed_Collection_Finalize_Object);
+		ck_assert_ptr_eq(c->__Write, __Write_Generated);
+		ck_assert_ptr_eq(c->__Read, __Read_Generated);
 		c->finalize(c);
 	}END_TEST
 START_TEST(GeneratedCollectionCastsKeepsFunctionsPointersExpected)
@@ -179,6 +184,8 @@ START_TEST(GeneratedCollectionUsesArrayedCollectionFunctions)
 		ck_assert_ptr_eq(c.last, Arrayed_Collection_Last);
 		ck_assert_ptr_eq(c.anyOne, Arrayed_Collection_AnyOne);
 		ck_assert_ptr_eq(c.finalize, Arrayed_Collection_Finalize);
+		ck_assert_ptr_eq(c.__Write, __Write_Generated);
+		ck_assert_ptr_eq(c.__Read, __Read_Generated);
 	}END_TEST
 
 START_TEST(ArrayedCollectionCallsMacroMalloc)
@@ -297,7 +304,7 @@ START_TEST(ArrayedCollectionForEachWorksAsExpected)
 		c.finalize(&c);
 	}END_TEST
 
-void* IntoTest( void*item, void*Rslt) {
+void* IntoTest(void*item, void*Rslt) {
 
 	int * param = (int*) Rslt;
 	int * each = (int*) item;
@@ -486,9 +493,6 @@ Suite * CreateSuite(void) {
 
 	tcase_add_test(tc_behaviour, GeneratedEnumCallsMacroRealloc);
 	tcase_add_test(tc_behaviour, GeneratedEnumCallsAddDequeue);
-
-
-
 
 	tcase_add_unchecked_fixture(tc_structure, SetUp, TearDown);
 	tcase_add_unchecked_fixture(tc_behaviour, SetUp, TearDown);

@@ -1,7 +1,6 @@
 #ifndef COLLECTION_H_
 #define COLLECTION_H_
 
-
 #include<string.h>
 #include<stdlib.h>
 
@@ -10,10 +9,7 @@ void setMallocFunction(void * (*)(size_t count));
 void setReallocFunction(void * (*)(void* ptr, size_t size));
 void setFreeFunction(void (*)(void*ptr));
 
-void* (* getCallocFunction())(size_t count, size_t size);
-void* (* getMallocFunction())(size_t size);
-void* (* getReallocFunction())(void* ptr, size_t size);
-void (* getFreeFunction())(void* ptr);
+void* (* getCallocFunction())(size_t count, size_t size);void* (* getMallocFunction())(size_t size);void* (* getReallocFunction())(void* ptr, size_t size);void (* getFreeFunction())(void* ptr);
 
 typedef enum {
 	TRUE = 1, FALSE = 0
@@ -118,7 +114,6 @@ void Arrayed_Collection_Finalize_Object(struct ArrayedCollection* self);
 	int typeSize;\
 } Name;
 
-
 #define TYPED_ARRAYED_COLLECTION_SIGNATURES(Name) \
 void Initialize_## Name ##_Object ( Name * Instance); \
 Name * Name ##_New (void);
@@ -181,6 +176,5 @@ X __Read_ ## Name (struct ArrayedCollection*, int); \
 
 TYPED_ARRAYED_COLLECTION_ACCESS_SIGNATURES(ArrayedCollection, void*)
 TYPED_ARRAYED_COLLECTION_SIGNATURES(ArrayedCollection);
-
 
 #endif

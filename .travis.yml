@@ -1,0 +1,9 @@
+language: c
+compiler: gcc
+dist: trusty
+addons:
+  apt:
+    packages:
+    - check
+install: make all
+
