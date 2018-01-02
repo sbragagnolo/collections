@@ -44,7 +44,7 @@ START_TEST(ArrayedCollectionMemoryLayoutAsExpected)
 		int fields, functions, data;
 		fields = sizeof(int) * 4;
 		data = sizeof(void*);
-		functions = sizeof(void*) * 18;
+		functions = sizeof(void*) * 19;
 		ck_assert_int_eq(sizeof(ArrayedCollection), fields + data + functions);
 		ck_assert_int_eq(sizeof(ArrayedCollection), sizeof(GeneratedEnumCollection));
 
